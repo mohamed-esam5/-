@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>صفحة المدير</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-container">
+    <h1>مرحبا بك يا مدير</h1>
+
+    <div class="actions">
+      <button onclick="showAddForm()">➕ إضافة موظف</button>
+      <button onclick="showReport('monthly')">📅 التقارير الشهرية</button>
+      <button onclick="showReport('yearly')">📆 التقارير السنوية</button>
+      <button onclick="showBalances()">📊 الأرصدة المتبقية</button>
+      <button onclick="logout()">🚪 تسجيل خروج</button>
+    </div>
+
+    <!-- نموذج إضافة موظف -->
+    <div id="add-employee-form" class="hidden">
+      <h2>إضافة موظف جديد</h2>
+      <input type="text" id="emp-name" placeholder="اسم الموظف" />
+      <input type="text" id="emp-password" placeholder="الرقم السري" />
+      <input type="email" id="emp-email" placeholder="الإيميل" />
+      <input type="number" id="emp-casual" placeholder="عدد الإجازات العارضة" />
+      <input type="number" id="emp-annual" placeholder="عدد الإجازات الاعتيادية" />
+      <button onclick="addEmployee()">✅ إضافة</button>
+      <button onclick="hideAddForm()">❌ إلغاء</button>
+    </div>
+
+    <!-- نموذج تعديل موظف -->
+    <div id="edit-employee-form" class="hidden">
+      <h2>تعديل بيانات الموظف</h2>
+      <input type="text" id="edit-name" disabled />
+           <input type="text" id="edit-password" placeholder="الرقم السري" />
+      <input type="email" id="edit-email" placeholder="الإيميل" />
+      <input type="number" id="edit-casual" placeholder="عدد الإجازات العارضة" />
+      <input type="number" id="edit-annual" placeholder="عدد الإجازات الاعتيادية" />
+      <button onclick="saveEmployeeEdits()">💾 حفظ التعديلات</button>
+      <button onclick="hideEditForm()">❌ إلغاء</button>
+    </div>
+
+    <!-- قائمة الموظفين -->
+    <div id="employee-list">
+      <h2>قائمة الموظفين</h2>
+      <div id="employees-container"></div>
+    </div>
+
+    <!-- الأذونات اليومية -->
+    <div id="daily-requests">
+      <h2>الأذونات اليومية</h2>
+      <div id="requests-list"></div>
+    </div>
+
+    <div class="navigation">
+      <button onclick="goBack()">🔙 رجوع</button>
+    </div>
+  </div>
+
+  <!-- ربط السكربتات بنظام Modules -->
+  <script type="module">
+    import {
+      addEmployee,
+      editEmployee,
+      saveEmployeeEdits,
+      deleteEmployee,
+      showAddForm,
+      hideAddForm,
+      hideEditForm,
+      showReport,
+      showBalances,
+      goBack,
+      logout,
+      loadEmployees,
+      loadRequests
+    } from './manager.js';
+
+    // ربط الوظائف بالـ window علشان تشتغل من HTML
+    window.addEmployee = addEmployee;
+    window.editEmployee = editEmployee;
+    window.saveEmployeeEdits = saveEmployeeEdits;
+    window.deleteEmployee = deleteEmployee;
+    window.showAddForm = showAddForm;
+    window.hideAddForm = hideAddForm;
+    window.hideEditForm = hideEditForm;
+    window.showReport = showReport;
+    window.showBalances = showBalances;
+    window.goBack = goBack;
+    window.logout = logout;
+
+    // تحميل البيانات عند فتح الصفحة
+    loadEmployees();
+    loadRequests();
+  </script>
+</body>
+</html>

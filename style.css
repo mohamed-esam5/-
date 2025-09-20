@@ -1,0 +1,74 @@
+body {
+  font-family: 'Cairo', sans-serif;
+  background: linear-gradient(to right, #00c6ff, #0072ff);
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+}
+
+.login-container {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 30px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
+  animation: fadeIn 1s ease-in-out;
+}
+
+button {
+  background-color: #fff;
+  color: #0072ff;
+  border: none;
+  padding: 10px 20px;
+  margin: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #00c6ff;
+  color: #fff;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: none;
+}
+
+.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: auto;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  animation: fadeIn 1s ease-in-out;
+}
+
+.actions button, .navigation button {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+}
+
+#add-employee-form input {
+  display: block;
+  width: 100%;
+  margin: 5px 0;
+}

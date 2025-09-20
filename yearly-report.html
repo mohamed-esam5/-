@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📆 التقارير السنوية</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page-container">
+    <h1>📆 تقرير السنة الحالية</h1>
+    <div id="yearly-report-container"></div>
+    <div class="navigation">
+      <button onclick="goBack()">🔙 رجوع</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { db, getDocs, collection } from './firebase.js';
+
+    async function loadYearlyReport() {
+      const container = document.getElementById("yearly-report-container");
+      container.innerHTML = "";
+
+      const role = localStorage.getItem("role");
+      const currentUser = localStorage.getItem("name");
+      const currentYear = new Date().getFullYear();
+
+      const snapshot = await getDocs(collection(db, "dailyRequests"));
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const leaveDate = new Date(data.leaveDate);
+        const sameYear = leaveDate.getFullYear() === currentYear;
+        const allowed = role === "manager" || data.name === currentUser;
+
+        if (sameYear && allowed) {
+          const item = document.createElement("div");
+          item.classList.add("report-item");
+          item.innerHTML = `
+            <p><strong>الموظف:</strong> ${data.name}</p>
+            <p><strong>نوع الإذن:</strong> ${data.type}</p>
+            <p><strong>السبب:</strong> ${data.reason}</p>
+            <p><strong>تاريخ الإذن:</strong> ${data.leaveDate}</p>
+            <hr>
+          `;
+          container.appendChild(item);
+        }
+      });
+    }
+
+    function goBack() {
+      window.location.href = "manager.html";
+    }
+
+    window.goBack = goBack;
+    loadYearlyReport();
+  </script>
+</body>
+</html>
