@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>📊 أرصدة الموظفين</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      direction: rtl;
+      background-color: #136dc6;
+      padding: 20px;
+    }
+   
+
+    .page-container {
+      max-width: 800px;
+      margin: auto;
+      background: rgb(0, 198, 255);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #000000;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #000000;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background-color: #3871e4;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <h2>📊 أرصدة الموظفين</h2>
+    <table id="balanceTable">
+      <thead>
+        <tr>
+          <th>الاسم</th>
+          <th>الإجازات الاعتيادية</th>
+          <th>الإجازات العارضة</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button onclick="goBack()">🔙 رجوع</button>
+  </div>
+
+  <script type="module">
+    import {
+      db,
+      collection,
+      getDocs
+    } from "./firebase.js";
+
+    async function loadEmployeeBalances() {
+      const employeesRef = collection(db, "employees");
+      const snapshot = await getDocs(employeesRef);
+      const tableBody = document.querySelector("#balanceTable tbody");
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const name = doc.id;
+        const annual = data.annual ?? "غير محدد";
+        const casual = data.casual ?? "غير محدد";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${name}</td>
+          <td>${annual}</td>
+          <td>${casual}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    window.goBack = function () {
+  window.location.href = "manager.html";
+};
+    loadEmployeeBalances();
+  </script>
+</body>
+</html>
