@@ -40,6 +40,7 @@ async function submitRequest() {
   const leaveValues = {
     "casual": { field: "casual", amount: 1 },
     "annual": { field: "annual", amount: 1 },
+    "hour":{ field: "annual", amount: 0.125 },
     "half-day": { field: "annual", amount: 0.5 },
     "quarter-morning": { field: "annual", amount: 0.25, maxPerMonth: 4 },
     "quarter-evening": { field: "annual", amount: 0.25 },
@@ -161,4 +162,5 @@ loadMyRequests();
 
 // ربط الوظائف بالـ window
 window.submitRequest = submitRequest;
+
 window.logout = logout;
