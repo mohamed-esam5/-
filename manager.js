@@ -130,7 +130,7 @@ export function showReport(type) {
   window.location.href = type === "monthly" ? "monthly-report.html" : "yearly-report.html";
 }
 export function showBalances() {
-  window.location.href = "balance.html";
+  window.location.href = "balances.html";
 }
 export function goBack() {
   window.location.href = "index.html";
@@ -138,4 +138,5 @@ export function goBack() {
 export function logout() {
   localStorage.clear();
   window.location.href = "index.html";
+
 }
