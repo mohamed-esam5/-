@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>صفحة الموظف</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="page-container">
+    <h1>مرحبًا، <span id="employee-name-display"></span></h1>
+
+    <div class="leave-balances">
+      <h2>رصيد الإجازات</h2>
+      <p>إجازات عارضة: <span id="casual-leave"></span></p>
+      <p>إجازات اعتيادية: <span id="annual-leave"></span></p>
+    </div>
+
+    <div class="request-form">
+  <h2>طلب إذن</h2>
+  <select id="leave-type">
+    <option value="">اختر نوع الإذن</option>
+    <option value="casual">إجازة عارضة</option>
+    <option value="annual">إجازة اعتيادية</option>
+    <option value="half-hour">نصف ساعة</option>
+    <option value="quarter-morning">ربع يوم صباحًا</option>
+    <option value="half-day">نصف يوم</option>
+    <option value="quarter-evening">ربع يوم مساءً</option>
+  </select>
+  <input type="date" id="leave-date" placeholder="تاريخ القيام بالإذن">
+   <input type="text" id="request-reason" placeholder="سبب الإذن">
+  <button onclick="submitRequest()">إرسال الطلب</button>
+</div>
+<div class="previous-requests">
+  <h2>طلباتي السابقة</h2>
+  <div id="requests-list">
+    <p>جاري التحميل...</p>
+  </div>
+</div>
+
+    <div class="navigation">
+      <button onclick="logout()">تسجيل خروج</button>
+    </div>
+  </div>
+
+  <script type="module" src="employee.js"></script>
+</body>
+</html>
