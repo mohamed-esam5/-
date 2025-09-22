@@ -5,6 +5,54 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>صفحة الموظف</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .counters {
+      display: flex;
+      justify-content: space-around;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .counter-box {
+      background: #f0f8ff;
+      border: 2px solid #007bff;
+      border-radius: 10px;
+      padding: 15px;
+      width: 45%;
+      text-align: center;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      margin-bottom: 15px;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .counter-box h3 {
+      margin-bottom: 10px;
+      font-size: 16px;
+      color: #007bff;
+    }
+    .counter-box p {
+      font-size: 22px;
+      font-weight: bold;
+      margin: 0;
+    }
+    .counter-box small {
+      display: block;
+      margin-top: 5px;
+      font-size: 14px;
+      color: #333;
+    }
+    /* ألوان الحالات للمربع كله */
+    .counter-box.green {
+      background-color: #d4edda !important; /* أخضر فاتح */
+      border-color: green !important;
+    }
+    .counter-box.yellow {
+      background-color: #fff3cd !important; /* أصفر فاتح */
+      border-color: orange !important;
+    }
+    .counter-box.red {
+      background-color: #f8d7da !important; /* أحمر فاتح */
+      border-color: red !important;
+    }
+  </style>
 </head>
 <body>
   <div class="page-container">
@@ -16,28 +64,43 @@
       <p>إجازات اعتيادية: <span id="annual-leave"></span></p>
     </div>
 
+    <!-- ✅ عداد الأذونات -->
+    <div class="counters">
+      <div class="counter-box green" id="quarterDayBox">
+        <h3>⏰ أذونات ربع يوم صباحًا</h3>
+        <p id="quarterDayCount">0</p>
+        <small id="quarterDayRemaining">متبقي: 4</small>
+      </div>
+      <div class="counter-box green" id="halfHourBox">
+        <h3>🕧 أذونات نصف ساعة</h3>
+        <p id="halfHourCount">0</p>
+        <small id="halfHourRemaining">متبقي: 4</small>
+      </div>
+    </div>
+
     <div class="request-form">
-  <h2>طلب إذن</h2>
-  <select id="leave-type">
-    <option value="">اختر نوع الإذن</option>
-    <option value="casual">إجازة عارضة</option>
-    <option value="annual">إجازة اعتيادية</option>
-    <option value="half-hour">نصف ساعة</option>
-    <option value="hour">ساعة</option>
-    <option value="quarter-morning">ربع يوم صباحًا</option>
-    <option value="half-day">نصف يوم</option>
-    <option value="quarter-evening">ربع يوم مساءً</option>
-  </select>
-  <input type="date" id="leave-date" placeholder="تاريخ القيام بالإذن">
-   <input type="text" id="request-reason" placeholder="سبب الإذن">
-  <button onclick="submitRequest()">إرسال الطلب</button>
-</div>
-<div class="previous-requests">
-  <h2>طلباتي السابقة</h2>
-  <div id="requests-list">
-    <p>جاري التحميل...</p>
-  </div>
-</div>
+      <h2>طلب إذن</h2>
+      <select id="leave-type">
+        <option value="">اختر نوع الإذن</option>
+        <option value="casual">إجازة عارضة</option>
+        <option value="annual">إجازة اعتيادية</option>
+        <option value="half-hour">نصف ساعة</option>
+        <option value="hour">ساعة</option>
+        <option value="quarter-morning">ربع يوم صباحًا</option>
+        <option value="half-day">نصف يوم</option>
+        <option value="quarter-evening">ربع يوم مساءً</option>
+      </select>
+      <input type="date" id="leave-date" placeholder="تاريخ القيام بالإذن">
+      <input type="text" id="request-reason" placeholder="سبب الإذن">
+      <button onclick="submitRequest()">إرسال الطلب</button>
+    </div>
+
+    <div class="previous-requests">
+      <h2>طلباتي السابقة</h2>
+      <div id="requests-list">
+        <p>جاري التحميل...</p>
+      </div>
+    </div>
 
     <div class="navigation">
       <button onclick="logout()">تسجيل خروج</button>
@@ -46,5 +109,4 @@
 
   <script type="module" src="employee.js"></script>
 </body>
-
 </html>
