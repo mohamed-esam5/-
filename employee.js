@@ -40,7 +40,7 @@ async function submitRequest() {
   const leaveValues = {
     "casual": { field: "casual", amount: 1 },
     "annual": { field: "annual", amount: 1 },
-    "hour":{ field: "annual", amount: 0.125 },
+    "hour": { field: "annual", amount: 0.125 },
     "half-day": { field: "annual", amount: 0.5 },
     "quarter-morning": { field: "annual", amount: 0.25, maxPerMonth: 4 },
     "quarter-evening": { field: "annual", amount: 0.25 },
@@ -61,12 +61,20 @@ async function submitRequest() {
   }
 
   const data = snap.data();
-  const month = new Date().getMonth();
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
 
   const snapshot = await getDocs(collection(db, "dailyRequests"));
   const sameTypeCount = snapshot.docs.filter(doc => {
     const d = doc.data();
-    return d.name === employeeName && d.type === type && new Date(d.createdDate).getMonth() === month;
+    const dDate = new Date(d.createdDate);
+    return (
+      d.name === employeeName &&
+      d.type === type &&
+      dDate.getMonth() === month &&
+      dDate.getFullYear() === year
+    );
   }).length;
 
   if (config.maxPerMonth && sameTypeCount >= config.maxPerMonth) {
@@ -102,14 +110,6 @@ async function submitRequest() {
     createdDate
   });
 
-  console.log("✅ تم تسجيل الإذن:", {
-    name: employeeName,
-    reason,
-    type,
-    leaveDate,
-    createdDate
-  });
-
   alert("تم إرسال الطلب بنجاح");
 
   // إعادة تعيين النموذج
@@ -118,9 +118,10 @@ async function submitRequest() {
   document.getElementById("leave-date").value = "";
 
   loadMyRequests();
+  loadCounters(); // تحديث العداد بعد الإرسال
 }
 
-// عرض الطلبات السابقة
+// ✅ عرض الطلبات اليومية فقط
 async function loadMyRequests() {
   const container = document.getElementById("requests-list");
   container.innerHTML = "";
@@ -128,9 +129,12 @@ async function loadMyRequests() {
   const snapshot = await getDocs(collection(db, "dailyRequests"));
   let found = false;
 
+  const today = new Date().toISOString().split("T")[0]; // yyyy-mm-dd
+
   snapshot.forEach(doc => {
     const data = doc.data();
-    if (data.name === employeeName) {
+    // فلترة: نفس الموظف + نفس تاريخ اليوم
+    if (data.name === employeeName && data.leaveDate === today) {
       found = true;
       const item = document.createElement("div");
       item.classList.add("request-item");
@@ -146,8 +150,55 @@ async function loadMyRequests() {
   });
 
   if (!found) {
-    container.innerHTML = "<p>لا توجد طلبات حتى الآن.</p>";
+    container.innerHTML = "<p>لا توجد طلبات لليوم.</p>";
   }
+}
+
+// ✅ تحميل العدادين (ربع يوم صباحًا + نصف ساعة) - شهري
+async function loadCounters() {
+  const snapshot = await getDocs(collection(db, "dailyRequests"));
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+
+  let quarterDay = 0;
+  let halfHour = 0;
+
+  snapshot.forEach(docSnap => {
+    const data = docSnap.data();
+    const dDate = new Date(data.createdDate);
+    if (data.name === employeeName && dDate.getMonth() === month && dDate.getFullYear() === year) {
+      if (data.type === "quarter-morning") {
+        quarterDay++;
+      } else if (data.type === "half-hour") {
+        halfHour++;
+      }
+    }
+  });
+
+  updateCounter("quarterDayCount", quarterDay, "quarterDayBox", "quarterDayRemaining");
+  updateCounter("halfHourCount", halfHour, "halfHourBox", "halfHourRemaining");
+}
+
+// ✅ تحديث لون المربع + المتبقي
+function updateCounter(countId, count, boxId, remainingId) {
+  const el = document.getElementById(countId);
+  const box = document.getElementById(boxId);
+  el.textContent = count;
+
+  // تحديث اللون على المربع كله
+  box.classList.remove("green", "yellow", "red");
+  if (count <= 1) {
+    box.classList.add("green");
+  } else if (count <= 3) {
+    box.classList.add("yellow");
+  } else {
+    box.classList.add("red");
+  }
+
+  // تحديث المتبقي
+  const remaining = 4 - count;
+  document.getElementById(remainingId).textContent = `متبقي: ${remaining >= 0 ? remaining : 0}`;
 }
 
 // تسجيل الخروج
@@ -159,8 +210,8 @@ function logout() {
 // تحميل البيانات عند فتح الصفحة
 loadEmployeeData();
 loadMyRequests();
+loadCounters();
 
 // ربط الوظائف بالـ window
 window.submitRequest = submitRequest;
-
 window.logout = logout;
