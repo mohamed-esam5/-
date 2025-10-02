@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>تعديل بيانات الموظف</title>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 30px 15px;
+    }
+
+    .form-container {
+      max-width: 450px;
+      width: 100%;
+      margin: auto;
+      background: #fff;
+      padding: 30px 25px;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #2575fc;
+      font-size: 1.6rem;
+    }
+
+    .form-container select,
+    .form-container input {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: all 0.3s ease;
+    }
+
+    .form-container input:focus,
+    .form-container select:focus {
+      border-color: #2575fc;
+      box-shadow: 0 0 6px rgba(37,117,252,0.3);
+      outline: none;
+    }
+
+    .form-container button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      font-size: 15px;
+      margin-bottom: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      color: #fff;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-container button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    }
+
+    .save { background: linear-gradient(135deg, #28a745, #218838); }
+    .delete { background: linear-gradient(135deg, #dc3545, #a71d2a); }
+    .back { background: linear-gradient(135deg, #007bff, #0056b3); }
+
+    @media (max-width: 480px) {
+      body { padding: 15px; }
+      .form-container { padding: 20px 15px; }
+      .form-container input,
+      .form-container select,
+      .form-container button {
+        font-size: 13px;
+        padding: 10px;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="form-container">
+    <h2>✏️ تعديل بيانات الموظف</h2>
+
+    <select id="employeeSelect">
+      <option value="">اختر موظفًا</option>
+    </select>
+
+    <input type="email" id="edit-email" placeholder="البريد الإلكتروني الجديد" />
+    <input type="password" id="edit-password" placeholder="كلمة المرور الجديدة (اختياري)" />
+    <input type="number" id="edit-casual" placeholder="رصيد الإجازات العارضة" />
+    <input type="number" id="edit-annual" placeholder="رصيد الإجازات الاعتيادية" />
+
+    <button onclick="saveEdits()" class="save">💾 حفظ التعديلات</button>
+    <button onclick="deleteEmployee()" class="delete">🗑️ حذف الموظف</button>
+    <button onclick="goBack()" class="back">🔙 العودة</button>
+  </div>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+    import {
+      doc, getDoc, getDocs, setDoc, deleteDoc, collection
+    } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+    let userMap = {}; // username → uid
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("❌ يجب تسجيل الدخول أولاً");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const roles = snap.data()?.roles || [snap.data()?.role];
+      if (!roles.includes("manager")) {
+        alert("❌ غير مصرح لك بالدخول");
+        window.location.href = "index.html";
+        return;
+      }
+
+      await loadEmployees();
+    });
+
+    async function loadEmployees() {
+      const select = document.getElementById("employeeSelect");
+      select.innerHTML = '<option value="">اختر موظفًا</option>';
+
+      const empSnap = await getDocs(collection(db, "employees"));
+      const userSnap = await getDocs(collection(db, "users"));
+
+      userMap = {};
+      userSnap.forEach(doc => {
+        const data = doc.data();
+        const roles = data.roles || [data.role];
+        if (roles.includes("employee")) {
+          userMap[data.username] = doc.id;
+        }
+      });
+
+      empSnap.forEach(doc => {
+        const uid = doc.id;
+        const userEntry = Object.entries(userMap).find(([name, id]) => id === uid);
+        if (userEntry) {
+          const username = userEntry[0];
+          const option = document.createElement("option");
+          option.value = username;
+          option.textContent = username;
+          select.appendChild(option);
+        }
+      });
+
+      select.addEventListener("change", async () => {
+        const name = select.value;
+        if (!name) return;
+
+        const uid = userMap[name];
+        const empRef = doc(db, "employees", uid);
+        const empData = (await getDoc(empRef)).data();
+
+        document.getElementById("edit-email").value = empData?.email || "";
+        document.getElementById("edit-casual").value = empData?.casual || "";
+        document.getElementById("edit-annual").value = empData?.annual || "";
+        document.getElementById("edit-password").value = "";
+      });
+    }
+
+    async function saveEdits() {
+      const name = document.getElementById("employeeSelect").value;
+      const email = document.getElementById("edit-email").value.trim();
+      const password = document.getElementById("edit-password").value.trim();
+      const casual = parseInt(document.getElementById("edit-casual").value);
+      const annual = parseInt(document.getElementById("edit-annual").value);
+
+      if (!name || !email || isNaN(casual) || isNaN(annual)) {
+        alert("❌ يرجى إدخال جميع البيانات بشكل صحيح");
+        return;
+      }
+
+      const uid = userMap[name];
+      if (uid) {
+        const userRef = doc(db, "users", uid);
+        const oldData = (await getDoc(userRef)).data();
+        const roles = oldData.roles || [oldData.role];
+
+        await setDoc(userRef, {
+          ...oldData,
+          username: name,
+          email,
+          roles,
+          password: password || oldData.password
+        });
+      }
+
+      await setDoc(doc(db, "employees", uid), {
+        email,
+        casual,
+        annual
+      });
+
+      alert("✅ تم حفظ التعديلات بنجاح");
+    }
+
+    async function deleteEmployee() {
+      const name = document.getElementById("employeeSelect").value;
+      if (!name) {
+        alert("❌ اختر موظفًا أولاً");
+        return;
+      }
+
+      if (!confirm(`هل أنت متأكد أنك تريد حذف الموظف ${name}؟ سيتم حذف جميع بياناته!`)) return;
+
+      const uid = userMap[name];
+      if (uid) {
+        await deleteDoc(doc(db, "users", uid));
+      }
+
+      await deleteDoc(doc(db, "employees", uid));
+
+      const snapshot = await getDocs(collection(db, "dailyRequests"));
+      const deletions = snapshot.docs
+        .filter(doc => doc.data().name === name)
+        .map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletions);
+
+      alert("✅ تم حذف الموظف بنجاح");
+
+            document.getElementById("employeeSelect").value = "";
+      document.getElementById("edit-email").value = "";
+      document.getElementById("edit-password").value = "";
+      document.getElementById("edit-casual").value = "";
+      document.getElementById("edit-annual").value = "";
+    }
+
+    function goBack() {
+      window.location.href = "manager.html";
+    }
+
+    // ربط الدوال بالأزرار
+    window.deleteEmployee = deleteEmployee;
+    window.saveEdits = saveEdits;
+    window.goBack = goBack;
+  </script>
+</body>
+</html>

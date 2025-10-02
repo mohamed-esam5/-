@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>تسجيل الدخول</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    form {
+      background: #fff;
+      padding: 30px 25px;
+      border-radius: 15px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.6rem;
+      text-align: center;
+    }
+
+    input, label {
+      width: 100%;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      transition: all 0.3s ease;
+      display: block;
+    }
+
+    input:focus {
+      border-color: #2575fc;
+      box-shadow: 0 0 6px rgba(37,117,252,0.3);
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      margin-bottom: 10px;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    }
+
+    .extra-links {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .extra-links button {
+      width: 100%;
+      background: #f0f0f0;
+      color: #333;
+      font-weight: normal;
+    }
+
+    .extra-links button:hover {
+      background: #e0e0e0;
+      box-shadow: none;
+      transform: none;
+    }
+
+    @media (max-width: 480px) {
+      form { padding: 20px 15px; }
+      h2 { font-size: 1.3rem; }
+      input, button, label { font-size: 14px; padding: 10px; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <form id="loginForm">
+    <h2>🔐 تسجيل الدخول</h2>
+    <input type="email" id="email" placeholder="البريد الإلكتروني" required />
+    <input type="password" id="password" placeholder="كلمة المرور" required />
+    <label>
+      <input type="checkbox" id="rememberMe" /> تذكرني دائمًا
+    </label>
+    <button type="submit">دخول</button>
+
+    <div class="extra-links">
+      <button type="button" onclick="window.location.href='signup.html'">📝 تسجيل حساب أول مرة</button>
+      <button type="button" onclick="window.location.href='reset-password.html'">🔑 نسيت كلمة السر؟</button>
+      <button type="button" id="logoutBtn">🚪 تسجيل خروج</button>
+    </div>
+  </form>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    
+    import { signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+    const form = document.getElementById("loginForm");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // ✅ تسجيل الدخول باستخدام Firebase Auth
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const rememberMe = document.getElementById("rememberMe").checked;
+
+      if (!email || !password) {
+        alert("❌ من فضلك أدخل البريد الإلكتروني وكلمة المرور");
+        return;
+      }
+
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // ✅ جلب بيانات المستخدم من Firestore
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (!userDoc.exists()) {
+          alert("⚠️ لا توجد بيانات للمستخدم في قاعدة البيانات");
+          return;
+        }
+
+        const userData = userDoc.data();
+        const roles = Array.isArray(userData.roles) ? userData.roles : (userData.role ? [userData.role] : []);
+
+        const saveData = {
+          uid: user.uid,
+          email: user.email,
+          username: userData.username,
+          roles
+        };
+
+        if (rememberMe) {
+          localStorage.setItem("currentUser", JSON.stringify(saveData));
+        } else {
+          sessionStorage.setItem("currentUser", JSON.stringify(saveData));
+        }
+
+        console.log("📌 صلاحيات المستخدم:", roles);
+
+        if (roles.includes("manager")) {
+          window.location.href = "manager.html";
+        } else if (roles.includes("employee")) {
+          window.location.href = "employee.html";
+        } else {
+          alert("⚠️ صلاحية غير معروفة");
+        }
+
+      } catch (error) {
+        alert("❌ فشل تسجيل الدخول: " + error.message);
+        console.error("❌ خطأ في تسجيل الدخول:", error);
+      }
+    });
+
+    // ✅ تسجيل الخروج
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await signOut(auth);
+      } catch (e) {
+        console.warn("⚠️ لم يكن هناك جلسة Firebase مفتوحة:", e.message);
+      }
+      localStorage.clear();
+      sessionStorage.clear();
+      alert("🚪 تم تسجيل الخروج بنجاح");
+    });
+    onAuthStateChanged(auth, (user) => {
+  if (!user) {
+    if (localStorage.getItem("manualLogout") === "true") {
+      alert("🚪 تم تسجيل الخروج بنجاح");
+      localStorage.removeItem("manualLogout");
+    } else {
+      alert("❌ يجب تسجيل الدخول");
+    }
+    window.location.href = "index.html";
+  }
+});
+  </script>
+</body>
+</html>

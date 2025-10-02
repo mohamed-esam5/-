@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📂 مأمورياتك</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background: #f0f4f8;
+      padding: 20px;
+    }
+    .page-container {
+      max-width: 900px;
+      margin: auto;
+      background: #fff;
+      border-radius: 12px;
+      padding: 25px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2575fc;
+    }
+    select, input, button, textarea {
+      margin: 5px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+    button {
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .mission-item {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      margin: 10px 0;
+      padding: 15px;
+      background: #fafafa;
+      position: relative;
+    }
+    .mission-actions {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .edit-form {
+      margin-top: 10px;
+      background: #eef2ff;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .navigation {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container" id="missionsPage" style="display:none;">
+    <h1>📂 مأمورياتك</h1>
+
+    <!-- فلترة -->
+    <div class="filters">
+      <select id="filter-type">
+        <option value="">كل الأنواع</option>
+        <option value="external">مأمورية من الخارج</option>
+        <option value="open">مأمورية مفتوحة</option>
+        <option value="return">مأمورية عودة</option>
+      </select>
+      <input type="date" id="filter-date">
+
+      <!-- ✅ فلتر بالأسماء يظهر للمدير فقط -->
+      <select id="filter-name" style="display:none;">
+        <option value="">كل الموظفين</option>
+      </select>
+
+      <button onclick="loadMissions()">🔍 بحث</button>
+      <button onclick="window.print()">🖨️ طباعة</button>
+    </div>
+
+    <!-- النتائج -->
+    <div id="missions-list">
+      <p>جاري التحميل...</p>
+    </div>
+
+    <div class="navigation">
+      <button onclick="window.location.href='employee.html'">🔙 رجوع</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+    import { db, collection, getDocs, doc, getDoc, deleteDoc, setDoc, query, where } from "./firebase.js";
+
+    const auth = getAuth();
+    let currentUser = null;
+    let isManager = false;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("❌ يجب تسجيل الدخول");
+        window.location.href = "index.html";
+        return;
+      }
+
+      currentUser = user;
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      const roles = userDoc.data()?.roles || [];
+
+      isManager = roles.includes("manager");
+
+      // ✅ لو مدير أظهر فلتر الأسماء وحمّل الموظفين
+      if (isManager) {
+        document.getElementById("filter-name").style.display = "inline-block";
+        await loadEmployeeNames();
+      }
+
+      document.getElementById("missionsPage").style.display = "block";
+      loadMissions();
+    });
+
+    async function loadEmployeeNames() {
+      const select = document.getElementById("filter-name");
+      select.innerHTML = '<option value="">كل الموظفين</option>';
+
+      const usersSnap = await getDocs(collection(db, "users"));
+      usersSnap.forEach(docSnap => {
+        const data = docSnap.data();
+        const roles = data.roles || [data.role];
+        if (roles.includes("employee")) {
+          const option = document.createElement("option");
+          option.value = docSnap.id; // uid
+          option.textContent = data.username;
+          select.appendChild(option);
+        }
+      });
+    }
+
+    async function loadMissions() {
+      const container = document.getElementById("missions-list");
+      container.innerHTML = "<p>جاري التحميل...</p>";
+
+      const typeFilter = document.getElementById("filter-type").value;
+      const dateFilter = document.getElementById("filter-date").value;
+      const nameFilter = isManager ? document.getElementById("filter-name").value : "";
+
+      const missionsRef = collection(db, "missions");
+      const q = isManager ? missionsRef : query(missionsRef, where("uid", "==", currentUser.uid));
+      const snapshot = await getDocs(q);
+
+      container.innerHTML = "";
+      let found = false;
+
+      for (const docSnap of snapshot.docs) {
+        const data = docSnap.data();
+        const id = docSnap.id;
+
+        if (!isManager && data.uid !== currentUser.uid) continue;
+        if (typeFilter && data.type !== typeFilter) continue;
+        if (dateFilter && data.date !== dateFilter) continue;
+        if (isManager && nameFilter && data.uid !== nameFilter) continue; // ✅ فلتر بالاسم
+
+        found = true;
+
+        const item = document.createElement("div");
+        item.classList.add("mission-item");
+
+        let employeeName = isManager ? await getEmployeeName(data.uid) : "";
+
+        item.innerHTML = `
+          ${isManager ? `<p><strong>الموظف:</strong> ${employeeName}</p>` : ""}
+          <p><strong>النوع:</strong> ${translateType(data.type)}</p>
+          <p><strong>التاريخ:</strong> ${data.date}</p>
+          <p><strong>التفاصيل:</strong> ${data.details}</p>
+          <p><strong>تاريخ التسجيل:</strong> ${new Date(data.createdDate).toLocaleString("ar-EG")}</p>
+        `;
+
+        if (isManager) {
+          const actions = document.createElement("div");
+          actions.classList.add("mission-actions");
+          actions.innerHTML = `
+            <button onclick="showEditForm('${id}', '${data.type}', '${data.date}', \`${data.details}\`)">✏️ تعديل</button>
+            <button onclick="deleteMission('${id}')">🗑️ حذف</button>
+          `;
+          item.appendChild(actions);
+        }
+
+        container.appendChild(item);
+      }
+
+      if (!found) {
+        container.innerHTML = "<p>🚫 لا توجد مأموريات مطابقة</p>";
+      }
+    }
+    window.loadMissions = loadMissions;
+
+    async function getEmployeeName(uid) {
+      if (!isManager) return "";
+      try {
+        const userDoc = await getDoc(doc(db, "users", uid));
+        return userDoc.exists() ? userDoc.data().username || uid : uid;
+      } catch {
+        return uid;
+      }
+    }
+
+    function translateType(type) {
+      switch(type) {
+        case "external": return "مأمورية من الخارج";
+        case "open": return "مأمورية مفتوحة";
+        case "return": return "مأمورية عودة";
+        default: return type;
+      }
+    }
+
+    window.deleteMission = async function(id) {
+      if (!confirm("هل أنت متأكد من حذف هذه المأمورية؟")) return;
+      await deleteDoc(doc(db, "missions", id));
+      alert("✅ تم الحذف");
+      loadMissions();
+    }
+
+    window.showEditForm = function(id, type, date, details) {
+      const container = document.getElementById("missions-list");
+      const form = document.createElement("div");
+      form.classList.add("edit-form");
+      form.innerHTML = `
+        <h4>تعديل المأمورية</h4>
+        <select id="edit-type">
+                    <option value="external" ${type === "external" ? "selected" : ""}>مأمورية من الخارج</option>
+          <option value="open" ${type === "open" ? "selected" : ""}>مأمورية مفتوحة</option>
+          <option value="return" ${type === "return" ? "selected" : ""}>مأمورية عودة</option>
+        </select>
+        <input type="date" id="edit-date" value="${date}">
+        <textarea id="edit-details">${details}</textarea>
+        <div style="margin-top:10px;">
+          <button onclick="submitEdit('${id}')">💾 حفظ التعديل</button>
+          <button onclick="loadMissions()">❌ إلغاء التعديل</button>
+        </div>
+      `;
+      container.innerHTML = "";
+      container.appendChild(form);
+    }
+
+    window.submitEdit = async function(id) {
+      const type = document.getElementById("edit-type").value;
+      const date = document.getElementById("edit-date").value;
+      const details = document.getElementById("edit-details").value.trim();
+
+      if (!type || !date || !details) {
+        alert("⚠️ كل الحقول مطلوبة");
+        return;
+      }
+
+      const ref = doc(db, "missions", id);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        alert("❌ لم يتم العثور على المأمورية");
+        return;
+      }
+
+      const oldData = snap.data();
+
+      await setDoc(ref, {
+        ...oldData,
+        type,
+        date,
+        details
+      });
+
+      alert("✅ تم حفظ التعديلات");
+      loadMissions();
+    }
+  </script>
+</body>
+</html>

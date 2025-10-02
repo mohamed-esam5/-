@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>قائمة الموظفين</title>
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background-color: #f8f9fa;
+      padding: 40px;
+      text-align: center;
+    }
+    .employee-item {
+      background: #fff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      text-align: right;
+      width: 400px;
+      margin: auto;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    @media (max-width: 600px) {
+  h1 { font-size: 1.4rem; }
+  h2 { font-size: 1.1rem; }
+
+  .request-form select,
+  .request-form input,
+  .request-form button {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  #leave-history .filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  #leave-history table {
+    font-size: 12px;
+    display: block;
+    overflow-x: auto; /* ✅ يخلي الجدول قابل للتمرير يمين/شمال */
+    white-space: nowrap;
+  }
+
+  .navigation button {
+    width: 100%; /* ✅ الأزرار تاخد عرض الشاشة بالكامل */
+  }
+}
+  </style>
+</head>
+<body>
+  <h2>👥 قائمة الموظفين</h2>
+  <div id="employees-container"></div>
+  <button onclick="goBack()">🔙 العودة للمدير</button>
+
+  <script type="module">
+    import { auth, db } from "./firebase.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js";
+    import { doc, getDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore.js";
+
+    function goBack() {
+      window.location.href = "manager.html";
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("❌ يجب تسجيل الدخول أولاً");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      const userData = snap.data();
+
+      const roles = Array.isArray(userData.roles)
+        ? userData.roles
+        : userData.role
+        ? [userData.role]
+        : [];
+
+      if (!roles.includes("manager")) {
+        alert("❌ غير مصرح لك بالدخول");
+        window.location.href = "index.html";
+        return;
+      }
+
+      loadEmployees();
+    });
+
+    async function loadEmployees() {
+      const container = document.getElementById("employees-container");
+      container.innerHTML = "";
+
+      const snapshot = await getDocs(collection(db, "employees"));
+      for (const docSnap of snapshot.docs) {
+        const emp = docSnap.data();
+        const uid = docSnap.id;
+
+        // جلب اسم الموظف من users
+        const userSnap = await getDoc(doc(db, "users", uid));
+        const username = userSnap.exists() ? userSnap.data().username : uid;
+
+        const item = document.createElement("div");
+        item.classList.add("employee-item");
+        item.innerHTML = `
+          <p><strong>الاسم:</strong> ${username}</p>
+          <p><strong>الإيميل:</strong> ${emp.email}</p>
+          <p><strong>الإجازات العارضة:</strong> ${emp.casual}</p>
+          <p><strong>الإجازات الاعتيادية:</strong> ${emp.annual}</p>
+        `;
+        container.appendChild(item);
+      }
+    }
+
+    window.goBack = goBack;
+  </script>
+</body>
+</html>

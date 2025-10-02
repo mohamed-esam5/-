@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8" />
+  <title>📅 الأذونات الشهرية</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      direction: rtl;
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 30px 15px;
+    }
+
+    .page-container {
+      max-width: 1000px;
+      width: 100%;
+      margin: auto;
+      background: #fff;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      animation: fadeIn 0.8s ease-in-out;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #2575fc;
+      font-size: 1.6rem;
+    }
+
+    /* ✅ الإحصائيات */
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .stat-box {
+      background: #f9f9f9;
+      border: 2px solid #2575fc;
+      border-radius: 12px;
+      padding: 20px;
+      width: 30%;
+      min-width: 200px;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      transition: transform 0.2s ease;
+    }
+    .stat-box:hover { transform: translateY(-3px); }
+    .stat-box h3 {
+      margin-bottom: 10px;
+      font-size: 15px;
+      color: #2575fc;
+    }
+    .stat-box p {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 0;
+      color: #333;
+    }
+
+    /* ✅ الفلاتر */
+    .filters {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .filters select {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      min-width: 200px;
+      font-size: 14px;
+    }
+
+    /* ✅ الجدول */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background: #2575fc;
+      color: #fff;
+    }
+    tr:nth-child(even) {
+      background: #f9f9f9;
+    }
+
+    /* ✅ الأزرار */
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 15px;
+      font-weight: bold;
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    /* ✅ موبايل */
+    @media (max-width: 768px) {
+      .stat-box { width: 45%; }
+      .filters { flex-direction: column; align-items: flex-start; }
+      .filters select { width: 100%; }
+    }
+    @media (max-width: 500px) {
+      .stat-box { width: 100%; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+      button { width: 100%; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <h2>📅 الأذونات الشهرية</h2>
+
+    <!-- الإحصائيات -->
+    <div class="stats">
+      <div class="stat-box"><h3>إجمالي الطلبات</h3><p id="totalRequests">0</p></div>
+      <div class="stat-box"><h3>أكثر نوع إذن</h3><p id="topType">-</p></div>
+      <div class="stat-box"><h3>أكثر موظف طلب</h3><p id="topEmployee">-</p></div>
+    </div>
+
+    <!-- الفلاتر -->
+    <div class="filters">
+      <select id="employeeFilter"><option value="">كل الموظفين</option></select>
+      <select id="typeFilter">
+        <option value="">كل الأنواع</option>
+        <option value="casual">إجازة عارضة</option>
+        <option value="annual">إجازة اعتيادية</option>
+        <option value="half-hour">نصف ساعة</option>
+        <option value="hour">ساعة</option>
+        <option value="quarter-morning">ربع يوم صباحًا</option>
+        <option value="half-day">نصف يوم</option>
+        <option value="quarter-evening">ربع يوم مساءً</option>
+      </select>
+    </div>
+
+    <!-- الجدول -->
+    <table id="monthlyTable">
+      <thead>
+        <tr>
+          <th>اسم الموظف</th>
+          <th>نوع الإذن</th>
+          <th>السبب</th>
+          <th>تاريخ القيام بالإذن</th>
+          <th>تاريخ تسجيل الطلب</th>
+        </tr>
+      </thead>
+      <tbody><tr><td colspan="5">جاري التحميل...</td></tr></tbody>
+    </table>
+
+    <!-- أزرار التصدير -->
+    <div class="buttons">
+      <button onclick="exportPDF()">📄 تصدير PDF</button>
+      <button onclick="exportCSV()">📊 تصدير Excel</button>
+      <button onclick="goBack()">🔙 رجوع</button>
+    </div>
+  </div>
+
+  <!-- ✅ نفس الجافاسكربت بتاعك بدون تغيير -->
+  <script type="module">
+    import { db, collection, getDocs } from "./firebase.js";
+
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    if (!currentUser || !currentUser.roles || !currentUser.roles.includes("manager")) {
+      alert("❌ غير مسموح بالدخول إلا للمدير");
+      window.location.href = "index.html";
+    }
+
+    let allRequests = [];
+
+    async function loadMonthlyRequests() {
+      const tableBody = document.querySelector("#monthlyTable tbody");
+      tableBody.innerHTML = "";
+
+      const snapshot = await getDocs(collection(db, "dailyRequests"));
+      const now = new Date();
+      const month = now.getMonth();
+      const year = now.getFullYear();
+
+      allRequests = [];
+      let employeesSet = new Set();
+
+      snapshot.forEach(docSnap => {
+        const data = docSnap.data();
+        const dDate = new Date(data.createdDate);
+
+        if (dDate.getMonth() === month && dDate.getFullYear() === year) {
+          allRequests.push(data);
+          employeesSet.add(data.name);
+        }
+      });
+
+      const employeeFilter = document.getElementById("employeeFilter");
+      employeeFilter.innerHTML = `<option value="">كل الموظفين</option>`;
+      employeesSet.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        employeeFilter.appendChild(option);
+      });
+
+      renderTable();
+    }
+
+    function updateStats(filtered) {
+      document.getElementById("totalRequests").textContent = filtered.length;
+
+      let typeCount = {};
+      let employeeCount = {};
+      filtered.forEach(req => {
+        typeCount[req.type] = (typeCount[req.type] || 0) + 1;
+        employeeCount[req.name] = (employeeCount[req.name] || 0) + 1;
+      });
+      let topType = Object.entries(typeCount).sort((a,b) => b[1]-a[1])[0];
+      let topEmployee = Object.entries(employeeCount).sort((a,b) => b[1]-a[1])[0];
+
+      document.getElementById("topType").textContent = topType ? `${topType[0]} (${topType[1]})` : "-";
+      document.getElementById("topEmployee").textContent = topEmployee ? `${topEmployee[0]} (${topEmployee[1]})` : "-";
+    }
+
+    function renderTable() {
+      const tableBody = document.querySelector("#monthlyTable tbody");
+      tableBody.innerHTML = "";
+
+      const employeeFilter = document.getElementById("employeeFilter").value;
+      const typeFilter = document.getElementById("typeFilter").value;
+
+      const filtered = allRequests.filter(req => {
+        return (
+          (employeeFilter === "" || req.name === employeeFilter) &&
+          (typeFilter === "" || req.type === typeFilter)
+        );
+      });
+
+      updateStats(filtered);
+
+      if (filtered.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5">لا توجد طلبات مطابقة</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(data => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${data.name}</td>
+          <td>${data.type}</td>
+          <td>${data.reason}</td>
+          <td>${data.leaveDate}</td>
+          <td>${new Date(data.createdDate).toLocaleString("ar-EG")}</td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // ✅ تصدير PDF
+    window.exportPDF = function() {
+      window.print();
+    };
+
+    // ✅ تصدير CSV
+    window.exportCSV = function() {
+      let csv = "اسم الموظف,نوع الإذن,السبب,تاريخ القيام,تاريخ التسجيل\n";
+      const rows = document.querySelectorAll("#monthlyTable tbody tr");
+      rows.forEach(row => {
+        const cols = row.querySelectorAll("td");
+        let rowData = [];
+        cols.forEach(col => rowData.push(col.innerText));
+        csv += rowData.join(",") + "\n";
+      });
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "monthly_requests.csv";
+      link.click();
+    };
+
+    // ✅ ربط الفلاتر
+    document.getElementById("employeeFilter").addEventListener("change", renderTable);
+    document.getElementById("typeFilter").addEventListener("change", renderTable);
+
+    // ✅ زر الرجوع
+    window.goBack = function() {
+      window.location.href = "manager.html";
+    };
+
+    // ✅ تحميل البيانات عند فتح الصفحة
+    loadMonthlyRequests();
+  </script>
+</body>
+</html>
